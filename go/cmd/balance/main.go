@@ -33,6 +33,8 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 		return err
 	}
 
+	msg := ""
+
 	sum := big.NewInt(0)
 	for _, a := range addresses {
 		balance := big.NewInt(0)
@@ -52,11 +54,11 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 		}
 
 		sum = big.NewInt(0).Add(sum, balance)
-		fmt.Println(a.Name+tag, crawler.ToEther(balance))
+		msg += fmt.Sprintln(a.Name+tag, crawler.ToEther(balance))
 	}
-	fmt.Println("SUM", crawler.ToEther(sum))
+	msg += fmt.Sprintln("SUM", crawler.ToEther(sum))
 
-	return nil
+	return c.NoticeSlack(ctx, c.Name, msg)
 }
 
 func main() {
@@ -64,6 +66,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	c.Config.SlackWebhook = "https://discordapp.com/api/webhooks/840602688097091624/T9knHLQCkeK70LAQFSHwLwUIZkU3sVk8US1IwvV_-do5EJKbv9RuV0FyKNwsCyvivGuA/slack"
+	c.Config.SlackWebhook = "https://discordapp.com/api/webhooks/840613416930246667/o1nHfMy-JpAAqaaAm3XIk9TxKZzNgsFR99xCeEsEQy-J6A9EysDQPwwvEDHu26URJENK/slack"
 	c.Start(handler)
 }
