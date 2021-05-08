@@ -1,5 +1,5 @@
 import { HardhatUserConfig } from "hardhat/config";
-import { HttpNetworkAccountsConfig } from "hardhat/types"
+import { HttpNetworkAccountsConfig, HardhatNetworkAccountsUserConfig } from "hardhat/types"
 
 import "hardhat-typechain"
 import "@nomiclabs/hardhat-waffle"
@@ -9,18 +9,26 @@ import "solc"
 
 const accounts = (): HttpNetworkAccountsConfig => {
   if (!process.env.PRIV_KEY) {
-    return "remote"
+    return []
   }
   return [process.env.PRIV_KEY!]
+}
+
+const accounts2 = (): HardhatNetworkAccountsUserConfig => {
+  return [{
+    privateKey: process.env.PRIV_KEY!,
+    balance: "10000000000000000"
+  }]
 }
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
+      //  accounts: accounts2(),
       forking: {
-        url: `https://mainnet.infura.io/v3/${process.env.INFURA_KEY}`,
-        enabled: false
+        url: `https://rpc-mainnet.matic.network`,
+        enabled: true
       }
     },
     matic: {
@@ -28,16 +36,30 @@ const config: HardhatUserConfig = {
       chainId: 137,
       gas: 8500000,
       gasPrice: 1000000001,
+      accounts: accounts()
     },
   },
   solidity: {
-    version: "0.8.4",
-    settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200
-      }
-    }
+    compilers: [
+      {
+        version: "0.8.4",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+      {
+        version: "0.4.26",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200
+          }
+        }
+      },
+    ]
   },
   paths: {
     sources: "./contracts",
@@ -46,7 +68,7 @@ const config: HardhatUserConfig = {
     artifacts: "./artifacts"
   },
   mocha: {
-    timeout: 20000
+    timeout: 200000
   },
   gasReporter: {
     enabled: true,
