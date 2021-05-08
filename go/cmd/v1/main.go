@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	txFee, _ = crawler.GweiToWei(300700)
+	txFee, _ = crawler.GweiToWei(600000)
 	value, _ = crawler.EtherToWei(1)
 
 	baseToken = crawler.AddrWMATIC
@@ -71,7 +71,7 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 					}
 
 					if valueWithFee.Cmp(expect) == -1 {
-						msg := fmt.Sprint(swapper1, swapper2, swapToken, expect.Text(10))
+						msg := fmt.Sprint(swapper1, swapper2, swapToken, "\n"+expect.Text(10))
 						if !c.Options.DryRun {
 							opts, err := c.NewTransactOpts()
 							if err != nil {
@@ -109,5 +109,5 @@ func main() {
 	}
 	c.Config.SlackWebhook = "https://discordapp.com/api/webhooks/840602688097091624/T9knHLQCkeK70LAQFSHwLwUIZkU3sVk8US1IwvV_-do5EJKbv9RuV0FyKNwsCyvivGuA/slack"
 	// c.Start(handler)
-	c.Daemon(handler, 10, 0)
+	c.Daemon(handler, 5, 0)
 }

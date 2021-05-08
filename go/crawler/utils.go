@@ -42,8 +42,11 @@ func ToGwei(wei *big.Int) float64 {
 }
 
 // ToEther ...
-func ToEther(wei *big.Int) *big.Int {
-	return new(big.Int).Quo(wei, big.NewInt(params.Ether))
+func ToEther(wei *big.Int) float64 {
+	weiDecimal, _ := decimal.NewFromString(wei.String())
+	base := decimal.NewFromInt(params.Ether)
+	ret, _ := weiDecimal.Div(base).Float64()
+	return ret
 }
 
 func EncodeToHex(b []byte) string {

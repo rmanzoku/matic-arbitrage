@@ -4,3 +4,4 @@ cache/
 typechain/
 
 go/cmd/v1/v1
+go/cmd/balance/balance
