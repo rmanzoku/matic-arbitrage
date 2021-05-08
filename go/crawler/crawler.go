@@ -42,11 +42,13 @@ type Crawler struct {
 }
 
 type Options struct {
-	DryRun bool `json:"dry_run"`
+	DryRun  bool `json:"dry_run"`
+	Verbose bool `json:"verbose"`
 }
 
 var DefaultOptions = Options{
-	DryRun: false,
+	DryRun:  false,
+	Verbose: false,
 }
 
 func UnmarshalOptions(data []byte) (Options, error) {
@@ -63,6 +65,7 @@ func (r *Options) Marshal() ([]byte, error) {
 func NewOptions() (o *Options) {
 	ret := &Options{}
 	flag.BoolVar(&ret.DryRun, "dry-run", DefaultOptions.DryRun, "Dry run")
+	flag.BoolVar(&ret.Verbose, "v", DefaultOptions.Verbose, "Verbose log")
 	flag.Parse()
 	return ret
 }
@@ -121,9 +124,11 @@ func (c *Crawler) Daemon(handler HandlerFunc, interval int64, timeout int64) {
 	since := time.Now().Unix()
 	loop := func(ctx context.Context, c *Crawler) error {
 		for {
-			now := time.Now().Unix()
-			if now > since+timeout {
-				return nil
+			if timeout > 0 {
+				now := time.Now().Unix()
+				if now > since+timeout {
+					return nil
+				}
 			}
 
 			err := h(ctx, c)
