@@ -51,12 +51,12 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 	wg := sync.WaitGroup{}
 	executed = sync.Map{}
 
-	for _, swapToken := range swapTokens {
-		for _, swapper1 := range swappers {
-			for _, swapper2 := range swappers {
-				if swapper1.String() == swapper2.String() {
-					continue
-				}
+	for _, swapper1 := range swappers {
+		for _, swapper2 := range swappers {
+			if swapper1.String() == swapper2.String() {
+				continue
+			}
+			for _, swapToken := range swapTokens {
 
 				wg.Add(1)
 				s1 := swapper1
