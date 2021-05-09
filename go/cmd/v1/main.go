@@ -32,8 +32,6 @@ var (
 		common.HexToAddress("0x652a7b75c229850714d4a11e856052aac3e9b065"), // WOLF
 		common.HexToAddress("0xd6df932a45c0f255f85145f286ea0b292b21c90b"), // aave
 	}
-
-	executed = sync.Map{}
 )
 
 func handler(ctx context.Context, c *crawler.Crawler) (err error) {
@@ -49,7 +47,8 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 	valueWithFee := big.NewInt(0).Add(value, txFee)
 
 	wg := sync.WaitGroup{}
-	executed = sync.Map{}
+	executed := sync.Map{}
+	mux := map[common.Address]*sync.Mutex{}
 
 	for _, swapper1 := range swappers {
 		for _, swapper2 := range swappers {
@@ -57,13 +56,24 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 				continue
 			}
 			for _, swapToken := range swapTokens {
+				if _, ok := mux[swapToken]; !ok {
+					mux[swapToken] = &sync.Mutex{}
+				}
 
 				wg.Add(1)
 				s1 := swapper1
 				s2 := swapper2
 				st := swapToken
 				go func(swapper1, swapper2, swapToken common.Address) {
-					defer wg.Done()
+					defer func() {
+						wg.Done()
+						mux[swapToken].Unlock()
+					}()
+
+					mux[swapToken].Lock()
+					if _, ok := executed.Load(swapToken); ok {
+						return
+					}
 
 					forth := []common.Address{baseToken, swapToken}
 					back := []common.Address{swapToken, baseToken}
@@ -82,9 +92,6 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 					if valueWithFee.Cmp(expect) == -1 {
 						msg := fmt.Sprint(swapper1, swapper2, swapToken, "\n"+expect.Text(10))
 						if !c.Options.DryRun {
-							if _, ok := executed.Load(swapToken); ok {
-								return
-							}
 							opts, err := c.NewTransactOpts()
 							if err != nil {
 								log(swapper1, swapper2, swapToken, err.Error())
