@@ -48,7 +48,7 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 
 	wg := sync.WaitGroup{}
 	executed := sync.Map{}
-	mux := map[common.Address]*sync.Mutex{}
+	mux := sync.Map{}
 
 	for _, swapper1 := range swappers {
 		for _, swapper2 := range swappers {
@@ -56,8 +56,8 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 				continue
 			}
 			for _, swapToken := range swapTokens {
-				if _, ok := mux[swapToken]; !ok {
-					mux[swapToken] = &sync.Mutex{}
+				if _, ok := mux.Load(swapToken); !ok {
+					mux.Store(swapToken, &sync.Mutex{})
 				}
 
 				wg.Add(1)
@@ -65,12 +65,14 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 				s2 := swapper2
 				st := swapToken
 				go func(swapper1, swapper2, swapToken common.Address) {
+					m, _ := mux.Load(swapToken)
+
 					defer func() {
 						wg.Done()
-						mux[swapToken].Unlock()
+						m.(*sync.Mutex).Unlock()
 					}()
 
-					mux[swapToken].Lock()
+					m.(*sync.Mutex).Lock()
 					if _, ok := executed.Load(swapToken); ok {
 						return
 					}
