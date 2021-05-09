@@ -62,12 +62,12 @@ func (r *Options) Marshal() ([]byte, error) {
 
 }
 
-func NewOptions() (o *Options) {
+func NewOptions() (o *Options, args []string) {
 	ret := &Options{}
 	flag.BoolVar(&ret.DryRun, "dry-run", DefaultOptions.DryRun, "Dry run")
 	flag.BoolVar(&ret.Verbose, "v", DefaultOptions.Verbose, "Verbose log")
 	flag.Parse()
-	return ret
+	return ret, flag.Args()
 }
 
 func NewCrawler(name string) (*Crawler, error) {
@@ -96,7 +96,7 @@ func NewCrawler(name string) (*Crawler, error) {
 	}
 
 	if ret.Options == nil {
-		ret.Options = NewOptions()
+		ret.Options, ret.Args = NewOptions()
 	}
 
 	return ret, err

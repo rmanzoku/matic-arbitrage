@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/big"
+	"strconv"
 	"sync"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -13,7 +14,6 @@ import (
 
 var (
 	txFee, _ = crawler.GweiToWei(600000)
-	value, _ = crawler.EtherToWei(1)
 
 	baseToken = crawler.AddrWMATIC
 	swappers  = []common.Address{crawler.AddrQuickSwap, crawler.AddrElk, crawler.AddrSushiSwap}
@@ -31,8 +31,9 @@ var (
 		common.HexToAddress("0x289cf2b63c5edeeeab89663639674d9233e8668e"), // Fish
 		common.HexToAddress("0x652a7b75c229850714d4a11e856052aac3e9b065"), // WOLF
 		common.HexToAddress("0xd6df932a45c0f255f85145f286ea0b292b21c90b"), // aave
-
 	}
+
+	executed = sync.Map{}
 )
 
 func handler(ctx context.Context, c *crawler.Crawler) (err error) {
@@ -40,10 +41,15 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 	if err != nil {
 		return err
 	}
-
+	argValue, err := strconv.ParseFloat(c.Args[0], 64)
+	if err != nil {
+		return err
+	}
+	value, _ := crawler.EtherToWei(argValue)
 	valueWithFee := big.NewInt(0).Add(value, txFee)
 
 	wg := sync.WaitGroup{}
+	executed = sync.Map{}
 
 	for _, swapper1 := range swappers {
 		for _, swapper2 := range swappers {
@@ -58,6 +64,11 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 				st := swapToken
 				go func(swapper1, swapper2, swapToken common.Address) {
 					defer wg.Done()
+
+					if _, ok := executed.Load(swapToken); ok {
+						return
+					}
+
 					forth := []common.Address{baseToken, swapToken}
 					back := []common.Address{swapToken, baseToken}
 					expect, err := contract.Dry(nil, swapper1, swapper2, value, forth, back)
@@ -69,6 +80,8 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 					if c.Options.Verbose {
 						log(swapper1, swapper2, swapToken, expect.Text(10))
 					}
+
+					// c.EthClient.EstimateGas(ctx, msg ethereum.CallMsg)
 
 					if valueWithFee.Cmp(expect) == -1 {
 						msg := fmt.Sprint(swapper1, swapper2, swapToken, "\n"+expect.Text(10))
@@ -85,6 +98,7 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 							}
 
 							msg = msg + "\n" + c.ExplorerURL(tx)
+							executed.Store(swapToken, struct{}{})
 						}
 						_ = c.NoticeSlack(ctx, c.Name, msg)
 					}
@@ -96,6 +110,11 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 
 	return nil
 }
+
+// func estimateGas(ctx context.Context, opts *bind.TransactOpts, contract common.Address, input []byte) {
+// 	msg := ethereum.CallMsg{From: opts.From, To: &contract, GasPrice: opts.GasPrice, Value: opts.Value, Data: input}
+// 	gasLimit, err = c.transactor.EstimateGas(ensureContext(opts.Context), msg)
+// }
 
 func log(swapper1, swapper2, swapToken common.Address, msg string) {
 	fmt.Println(swapper1.String(), swapper2.String(), swapToken.String(), msg)
