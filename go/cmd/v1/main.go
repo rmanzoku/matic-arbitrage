@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strconv"
 	"sync"
+	"time"
 
 	"github.com/ethereum/go-ethereum/common"
 	v1 "github.com/rmanzoku/matic-arbitrage/go/contracts/v1"
@@ -16,7 +17,11 @@ var (
 	txFee, _ = crawler.GweiToWei(600000)
 
 	baseToken = crawler.AddrWMATIC
-	swappers  = []common.Address{crawler.AddrQuickSwap, crawler.AddrElk, crawler.AddrSushiSwap}
+	swappers  = []common.Address{
+		crawler.AddrQuickSwap,
+		crawler.AddrSushiSwap,
+		crawler.AddrElk,
+	}
 
 	swapTokens = []common.Address{
 		crawler.AddrWETH,
@@ -35,6 +40,7 @@ var (
 )
 
 func handler(ctx context.Context, c *crawler.Crawler) (err error) {
+	now := time.Now()
 	contract, err := v1.NewV1(common.HexToAddress("0xc86ba4527797f46569bEb67fb7fE2F0B2E6d1fB8"), c.EthClient)
 	if err != nil {
 		return err
@@ -92,7 +98,8 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 					// c.EthClient.EstimateGas(ctx, msg ethereum.CallMsg)
 
 					if valueWithFee.Cmp(expect) == -1 {
-						msg := fmt.Sprint(swapper1, swapper2, swapToken, "\n"+expect.Text(10))
+						msg := now.Format(time.RFC3339) + "\n"
+						msg += fmt.Sprint(swapper1, swapper2, swapToken, "\n"+expect.Text(10))
 						if !c.Options.DryRun {
 							opts, err := c.NewTransactOpts()
 							if err != nil {
