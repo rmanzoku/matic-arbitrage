@@ -51,23 +51,19 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 	wg := sync.WaitGroup{}
 	executed = sync.Map{}
 
-	for _, swapper1 := range swappers {
-		for _, swapper2 := range swappers {
-			if swapper1.String() == swapper2.String() {
-				continue
-			}
+	for _, swapToken := range swapTokens {
+		for _, swapper1 := range swappers {
+			for _, swapper2 := range swappers {
+				if swapper1.String() == swapper2.String() {
+					continue
+				}
 
-			for _, swapToken := range swapTokens {
 				wg.Add(1)
 				s1 := swapper1
 				s2 := swapper2
 				st := swapToken
 				go func(swapper1, swapper2, swapToken common.Address) {
 					defer wg.Done()
-
-					if _, ok := executed.Load(swapToken); ok {
-						return
-					}
 
 					forth := []common.Address{baseToken, swapToken}
 					back := []common.Address{swapToken, baseToken}
@@ -86,6 +82,9 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 					if valueWithFee.Cmp(expect) == -1 {
 						msg := fmt.Sprint(swapper1, swapper2, swapToken, "\n"+expect.Text(10))
 						if !c.Options.DryRun {
+							if _, ok := executed.Load(swapToken); ok {
+								return
+							}
 							opts, err := c.NewTransactOpts()
 							if err != nil {
 								log(swapper1, swapper2, swapToken, err.Error())
