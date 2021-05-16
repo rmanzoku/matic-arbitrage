@@ -6,6 +6,7 @@ import (
 	"math/big"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -55,6 +56,16 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 	wg := sync.WaitGroup{}
 	executed := sync.Map{}
 	mux := sync.Map{}
+
+	opts, err := c.NewTransactOpts()
+	if err != nil {
+		return err
+	}
+	nonce, err := c.EthClient.NonceAt(ctx, opts.From, nil)
+	if err != nil {
+		return err
+	}
+	nonce--
 
 	for _, swapper1 := range swappers {
 		for _, swapper2 := range swappers {
@@ -106,14 +117,18 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 								log(swapper1, swapper2, swapToken, err.Error())
 								return
 							}
+							opts.Nonce = big.NewInt(0).SetUint64(atomic.AddUint64(&nonce, 1))
+
 							tx, err := contract.Swap(opts, swapper1, swapper2, value, forth, back)
 							if err != nil {
 								log(swapper1, swapper2, swapToken, err.Error())
 								return
 							}
 
-							msg = msg + "\n" + c.ExplorerURL(tx)
+							msg += "\n" + c.ExplorerURL(tx)
+							msg += "\n" + opts.Nonce.String()
 							executed.Store(swapToken, struct{}{})
+
 						}
 						_ = c.NoticeSlack(ctx, c.Name, msg)
 					}
