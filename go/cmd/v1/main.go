@@ -158,5 +158,5 @@ func main() {
 	}
 	c.Config.SlackWebhook = "https://discordapp.com/api/webhooks/840602688097091624/T9knHLQCkeK70LAQFSHwLwUIZkU3sVk8US1IwvV_-do5EJKbv9RuV0FyKNwsCyvivGuA/slack"
 	// c.Start(handler)
-	c.Daemon(handler, 5, 0)
+	c.Daemon(handler, 10, 0)
 }
