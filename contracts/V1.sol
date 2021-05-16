@@ -84,11 +84,6 @@ contract V1 is Common {
         require(incomings[incomings.length - 1] > outgoings[0], "loss");
     }
 
-    function withdraw(address _token) external onlyOwner {
-        IERC20 token = IERC20(_token);
-        token.transfer(msg.sender, token.balanceOf(address(this)));
-    }
-
     // function swapElkQuick(address[] calldata path, address[] calldata reverse)
     //     external
     //     payable
