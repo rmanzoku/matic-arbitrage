@@ -61,9 +61,13 @@ func handler(ctx context.Context, c *crawler.Crawler) (err error) {
 	if err != nil {
 		return err
 	}
+
+retry:
 	nonce, err := c.EthClient.NonceAt(ctx, opts.From, nil)
 	if err != nil {
-		return err
+		fmt.Println(err)
+		time.Sleep(5 * time.Second)
+		goto retry
 	}
 	nonce--
 
