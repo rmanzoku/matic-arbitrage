@@ -37,6 +37,7 @@ var (
 		common.HexToAddress("0x289cf2b63c5edeeeab89663639674d9233e8668e"), // Fish
 		common.HexToAddress("0x652a7b75c229850714d4a11e856052aac3e9b065"), // WOLF
 		common.HexToAddress("0xd6df932a45c0f255f85145f286ea0b292b21c90b"), // aave
+		common.HexToAddress("0x8a953cfe442c5e8855cc6c61b1293fa648bae472"), // polydoge
 	}
 )
 
